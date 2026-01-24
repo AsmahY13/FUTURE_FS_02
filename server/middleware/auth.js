@@ -1,8 +1,11 @@
 const jwt = require('jsonwebtoken');
 
 module.exports = function(req, res, next) {
-    // Get token from header
-    const token = req.header('x-auth-token');
+    // Get token from Authorization header
+    const authHeader = req.header('Authorization');
+    const token = authHeader && authHeader.startsWith('Bearer ') 
+        ? authHeader.slice(7) 
+        : null;
     
     // Check if no token
     if (!token) {
@@ -11,7 +14,7 @@ module.exports = function(req, res, next) {
     
     try {
         // Verify token
-        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_jwt_secret_for_vercel');
         req.user = decoded;
         next();
     } catch (error) {

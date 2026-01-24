@@ -40,6 +40,43 @@ router.get('/:id', async (req, res) => {
     }
 });
 
+// GET lead statistics (summary with breakdowns)
+router.get('/stats/summary', async (req, res) => {
+    try {
+        const totalLeads = await Lead.countDocuments();
+        const newLeads = await Lead.countDocuments({ status: 'New' });
+        const convertedLeads = await Lead.countDocuments({ status: 'Converted' });
+        const lostLeads = await Lead.countDocuments({ status: 'Lost' });
+
+        // Group by source
+        const sourcesAgg = await Lead.aggregate([
+            { $group: { _id: { $ifNull: ['$source', 'Unknown'] }, count: { $sum: 1 } } },
+            { $project: { _id: 0, name: '$_id', count: 1 } }
+        ]);
+
+        // Group by status
+        const statusesAgg = await Lead.aggregate([
+            { $group: { _id: { $ifNull: ['$status', 'Unknown'] }, count: { $sum: 1 } } },
+            { $project: { _id: 0, name: '$_id', count: 1 } }
+        ]);
+
+        const conversionRate = totalLeads > 0
+            ? Math.round((convertedLeads / totalLeads) * 100)
+            : 0;
+
+        res.json({
+            totalLeads,
+            newOpportunities: newLeads,
+            conversionRate,
+            lostLeads,
+            sources: sourcesAgg,
+            statuses: statusesAgg
+        });
+    } catch (error) {
+        res.status(500).json({ message: error.message });
+    }
+});
+
 // POST create new lead
 router.post('/', async (req, res) => {
     try {
@@ -100,27 +137,6 @@ router.post('/:id/notes', async (req, res) => {
     }
 });
 
-// GET lead statistics
-router.get('/stats/summary', async (req, res) => {
-    try {
-        const totalLeads = await Lead.countDocuments();
-        const newLeads = await Lead.countDocuments({ status: 'New' });
-        const convertedLeads = await Lead.countDocuments({ status: 'Converted' });
-        const lostLeads = await Lead.countDocuments({ status: 'Lost' });
-        
-        const conversionRate = totalLeads > 0 
-            ? Math.round((convertedLeads / totalLeads) * 100) 
-            : 0;
-        
-        res.json({
-            totalLeads,
-            newOpportunities: newLeads,
-            conversionRate,
-            lostLeads
-        });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-});
+// stats route moved earlier to include breakdowns
 
 module.exports = router;

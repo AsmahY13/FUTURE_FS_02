@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaArrowUp, FaUsers, FaChartLine, FaExclamationTriangle } from 'react-icons/fa';
 import { leadAPI } from '../services/api';
+import MiniCharts from './MiniCharts';
 
 const Dashboard = () => {
     const [stats, setStats] = useState({
@@ -68,6 +69,10 @@ const Dashboard = () => {
             <div className="dashboard-header">
                 <h1>Dashboard</h1>
                 <p>Overview of your sales pipeline</p>
+            </div>
+
+            <div className="charts-row">
+                <MiniCharts stats={{ sources: stats.sources || [], statuses: stats.statuses || [] }} />
             </div>
 
             <div className="stats-grid">
