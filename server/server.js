@@ -10,12 +10,25 @@ dotenv.config();
 const app = express();
 
 // ✅ UPDATED CORS FOR VERCEL DEPLOYMENT
+
+// ✅ UPDATED CORS FOR VERCEL & LOCALHOST
+const allowedOrigins = [
+  'https://minicrm-frontend-two.vercel.app',
+  'http://localhost:3000'
+];
 app.use(cors({
-  origin: [
-    'http://localhost:3000',
-    process.env.FRONTEND_URL || 'https://minicrm-frontend.vercel.app'
-  ],
-  credentials: true
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// ✅ Handle preflight OPTIONS requests for all routes
+app.options('*', cors({
+  origin: allowedOrigins,
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
 app.use(express.json());
