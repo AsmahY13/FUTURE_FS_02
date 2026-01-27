@@ -13,7 +13,7 @@ const app = express();
 
 // ✅ UPDATED CORS FOR VERCEL & LOCALHOST
 const allowedOrigins = [
-  'https://minicrm-frontend-two.vercel.app',
+  'https://future-fs-02-sigma.vercel.app',
   'http://localhost:3000'
 ];
 app.use(cors({
