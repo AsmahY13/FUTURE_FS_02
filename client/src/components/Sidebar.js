@@ -64,7 +64,18 @@ const Sidebar = ({ user, onLogout }) => {
             <div className="sidebar-header">
                 <div className="logo-container">
                     <div className="logo">
-                        <span className="logo-icon">📊</span>
+                        <div className="logo-icon">
+                            <svg width="32" height="32" viewBox="0 0 32 32" fill="none">
+                                <rect width="32" height="32" rx="8" fill="url(#sidebarGradient)"/>
+                                <path d="M10 16L14 20L22 12" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/>
+                                <defs>
+                                    <linearGradient id="sidebarGradient" x1="0" y1="0" x2="32" y2="32">
+                                        <stop offset="0%" stopColor="#6366f1"/>
+                                        <stop offset="100%" stopColor="#8b5cf6"/>
+                                    </linearGradient>
+                                </defs>
+                            </svg>
+                        </div>
                         <h1>MiniCRM</h1>
                     </div>
                 </div>
@@ -88,8 +99,11 @@ const Sidebar = ({ user, onLogout }) => {
                             to="/dashboard" 
                             className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
                         >
-                            <FaTachometerAlt className="nav-icon" />
+                            <div className="nav-icon-wrapper">
+                                <FaTachometerAlt className="nav-icon" />
+                            </div>
                             <span>Dashboard</span>
+                            <div className="active-indicator"></div>
                         </NavLink>
                     </li>
                     <li>
@@ -97,8 +111,11 @@ const Sidebar = ({ user, onLogout }) => {
                             to="/leads" 
                             className={({ isActive }) => isActive ? 'nav-link active' : 'nav-link'}
                         >
-                            <FaUsers className="nav-icon" />
+                            <div className="nav-icon-wrapper">
+                                <FaUsers className="nav-icon" />
+                            </div>
                             <span>Leads</span>
+                            <div className="active-indicator"></div>
                         </NavLink>
                     </li>
                 </ul>
@@ -112,9 +129,15 @@ const Sidebar = ({ user, onLogout }) => {
             </div>
 
             <style jsx>{`
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700;800&display=swap');
+                
+                * {
+                    box-sizing: border-box;
+                }
+                
                 .sidebar {
-                    width: 240px;
-                    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+                    width: 250px;
+                    background: linear-gradient(180deg, #0f172a 0%, #1e293b 100%);
                     color: white;
                     display: flex;
                     flex-direction: column;
@@ -124,54 +147,85 @@ const Sidebar = ({ user, onLogout }) => {
                     left: 0;
                     z-index: 1000;
                     overflow-y: auto;
-                    border-right: 1px solid rgba(255, 255, 255, 0.1);
+                    border-right: 1px solid rgba(255, 255, 255, 0.08);
+                    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+                    box-shadow: 4px 0 24px rgba(0, 0, 0, 0.12);
+                }
+                
+                .sidebar::-webkit-scrollbar {
+                    width: 6px;
+                }
+                
+                .sidebar::-webkit-scrollbar-track {
+                    background: transparent;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb {
+                    background: rgba(255, 255, 255, 0.1);
+                    border-radius: 3px;
+                }
+                
+                .sidebar::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255, 255, 255, 0.2);
                 }
                 
                 .sidebar-header {
-                    padding: 20px;
-                    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+                    padding: 32px 24px 28px;
+                    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     flex-shrink: 0;
+                    background: rgba(0, 0, 0, 0.1);
                 }
                 
                 .logo-container {
-                    margin-bottom: 20px;
+                    margin-bottom: 24px;
                 }
                 
                 .logo {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
                 }
                 
                 .logo-icon {
-                    font-size: 22px;
+                    flex-shrink: 0;
                 }
                 
                 .sidebar h1 {
-                    font-size: 18px;
-                    font-weight: 700;
+                    font-size: 22px;
+                    font-weight: 800;
                     margin: 0;
                     color: white;
-                    letter-spacing: 0.5px;
+                    letter-spacing: -0.01em;
                 }
                 
                 .user-profile {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
+                    padding: 14px;
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 12px;
+                    border: 1px solid rgba(255, 255, 255, 0.08);
+                    transition: all 0.2s ease;
+                }
+                
+                .user-profile:hover {
+                    background: rgba(255, 255, 255, 0.08);
+                    border-color: rgba(99, 102, 241, 0.3);
                 }
                 
                 .avatar {
-                    width: 36px;
-                    height: 36px;
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    border-radius: 10px;
+                    width: 44px;
+                    height: 44px;
+                    background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%);
+                    border-radius: 12px;
                     display: flex;
                     align-items: center;
                     justify-content: center;
-                    font-weight: 600;
-                    font-size: 14px;
+                    font-weight: 700;
+                    font-size: 16px;
                     flex-shrink: 0;
+                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.3);
                 }
                 
                 .user-info {
@@ -180,9 +234,9 @@ const Sidebar = ({ user, onLogout }) => {
                 }
                 
                 .user-name {
-                    font-size: 13px;
+                    font-size: 14px;
                     font-weight: 600;
-                    margin: 0 0 2px 0;
+                    margin: 0 0 4px 0;
                     color: white;
                     white-space: nowrap;
                     overflow: hidden;
@@ -190,17 +244,18 @@ const Sidebar = ({ user, onLogout }) => {
                 }
                 
                 .user-email {
-                    font-size: 11px;
-                    color: rgba(255, 255, 255, 0.7);
+                    font-size: 12px;
+                    color: rgba(255, 255, 255, 0.5);
                     margin: 0;
                     white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
+                    font-weight: 500;
                 }
                 
                 .sidebar-nav {
                     flex: 1;
-                    padding: 20px;
+                    padding: 24px 16px;
                     overflow-y: auto;
                     overflow-x: hidden;
                     min-height: 0;
@@ -209,111 +264,212 @@ const Sidebar = ({ user, onLogout }) => {
                 .nav-title {
                     font-size: 11px;
                     text-transform: uppercase;
-                    letter-spacing: 0.5px;
-                    color: rgba(255, 255, 255, 0.5);
-                    margin-bottom: 16px;
-                    font-weight: 500;
+                    letter-spacing: 0.1em;
+                    color: rgba(255, 255, 255, 0.4);
+                    margin: 0 0 16px 12px;
+                    font-weight: 700;
                 }
                 
                 .sidebar-nav ul {
                     list-style: none;
                     padding: 0;
                     margin: 0;
+                    display: flex;
+                    flex-direction: column;
+                    gap: 6px;
                 }
                 
                 .sidebar-nav li {
-                    margin-bottom: 6px;
+                    margin: 0;
                 }
                 
                 .nav-link {
                     display: flex;
                     align-items: center;
                     gap: 12px;
-                    padding: 10px 12px;
-                    color: rgba(255, 255, 255, 0.7);
+                    padding: 14px 16px;
+                    color: rgba(255, 255, 255, 0.6);
                     text-decoration: none;
-                    transition: all 0.2s ease;
-                    border-radius: 8px;
-                    font-size: 13px;
-                    font-weight: 500;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+                    border-radius: 12px;
+                    font-size: 14px;
+                    font-weight: 600;
+                    position: relative;
+                    overflow: hidden;
+                }
+                
+                .nav-link::before {
+                    content: '';
+                    position: absolute;
+                    left: 0;
+                    top: 0;
+                    height: 100%;
+                    width: 3px;
+                    background: linear-gradient(180deg, #6366f1, #8b5cf6);
+                    transform: translateX(-3px);
+                    transition: transform 0.2s ease;
                 }
                 
                 .nav-link:hover {
-                    background: rgba(255, 255, 255, 0.1);
-                    color: white;
+                    background: rgba(255, 255, 255, 0.08);
+                    color: rgba(255, 255, 255, 0.95);
+                }
+                
+                .nav-link:hover .nav-icon-wrapper {
+                    background: rgba(99, 102, 241, 0.15);
+                    transform: scale(1.05);
                 }
                 
                 .nav-link.active {
-                    background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+                    background: rgba(99, 102, 241, 0.12);
                     color: white;
-                    border-left: 3px solid #667eea;
+                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.15);
+                }
+                
+                .nav-link.active::before {
+                    transform: translateX(0);
+                }
+                
+                .nav-link.active .nav-icon-wrapper {
+                    background: linear-gradient(135deg, #6366f1, #8b5cf6);
+                    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.4);
+                }
+                
+                .nav-link.active .nav-icon {
+                    color: white;
+                }
+                
+                .nav-icon-wrapper {
+                    width: 36px;
+                    height: 36px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    background: rgba(255, 255, 255, 0.05);
+                    border-radius: 10px;
+                    flex-shrink: 0;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                 }
                 
                 .nav-icon {
-                    font-size: 14px;
-                    width: 16px;
+                    font-size: 16px;
+                    color: rgba(255, 255, 255, 0.7);
+                    transition: color 0.2s ease;
                 }
                 
+                .nav-link:hover .nav-icon {
+                    color: rgba(255, 255, 255, 0.95);
+                }
+                
+                .active-indicator {
+                    display: none;
+                }
                 
                 .sidebar-footer {
-                    padding: 16px;
-                    border-top: 1px solid rgba(255, 255, 255, 0.1);
+                    padding: 20px 16px;
+                    border-top: 1px solid rgba(255, 255, 255, 0.08);
                     flex-shrink: 0;
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
+                    background: rgba(0, 0, 0, 0.1);
                 }
                 
                 .logout-btn {
                     display: flex;
                     align-items: center;
-                    gap: 10px;
+                    gap: 12px;
                     width: 100%;
-                    padding: 10px 12px;
-                    background: rgba(255, 255, 255, 0.05);
-                    border: 1px solid rgba(255, 255, 255, 0.1);
-                    border-radius: 8px;
-                    color: rgba(255, 255, 255, 0.7);
-                    font-size: 13px;
-                    font-weight: 500;
+                    padding: 14px 16px;
+                    background: rgba(255, 255, 255, 0.04);
+                    border: 1.5px solid rgba(255, 255, 255, 0.08);
+                    border-radius: 12px;
+                    color: rgba(255, 255, 255, 0.6);
+                    font-size: 14px;
+                    font-weight: 600;
                     cursor: pointer;
-                    transition: all 0.2s ease;
+                    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
                     text-align: left;
+                    font-family: 'Outfit', sans-serif;
+                }
+                
+                .logout-btn svg {
+                    font-size: 16px;
                 }
                 
                 .logout-btn:hover {
-                    background: rgba(239, 68, 68, 0.2);
-                    color: #ef4444;
+                    background: rgba(239, 68, 68, 0.12);
+                    color: #fca5a5;
                     border-color: rgba(239, 68, 68, 0.3);
+                    transform: translateY(-1px);
                 }
                 
+                .logout-btn:active {
+                    transform: translateY(0);
+                }
+                
+                /* Responsive Design */
                 @media (max-width: 768px) {
                     .sidebar {
                         width: 100%;
                         position: static;
                         height: auto;
-                    }
-                    
-                    .main-content {
-                        margin-left: 0;
+                        border-right: none;
+                        border-bottom: 1px solid rgba(255, 255, 255, 0.08);
                     }
                     
                     .sidebar-header {
-                        padding: 16px;
+                        padding: 20px 16px;
+                    }
+                    
+                    .logo-container {
+                        margin-bottom: 16px;
                     }
                     
                     .sidebar-nav {
-                        padding: 16px;
+                        padding: 20px 16px;
                     }
                     
-                    .quick-stats {
-                        margin: 0 12px 12px 12px;
+                    .sidebar-nav ul {
+                        display: grid;
+                        grid-template-columns: 1fr 1fr;
+                        gap: 8px;
+                    }
+                    
+                    .nav-link {
+                        justify-content: center;
+                        flex-direction: column;
+                        gap: 8px;
+                        padding: 16px 12px;
+                    }
+                    
+                    .nav-link span {
+                        font-size: 12px;
                     }
                     
                     .sidebar-footer {
                         padding: 16px;
-                        flex-direction: row;
-                        flex-wrap: wrap;
+                    }
+                }
+                
+                @media (max-width: 480px) {
+                    .sidebar-header {
+                        padding: 16px;
+                    }
+                    
+                    .user-profile {
+                        padding: 12px;
+                    }
+                    
+                    .avatar {
+                        width: 40px;
+                        height: 40px;
+                        font-size: 15px;
+                    }
+                    
+                    .user-name {
+                        font-size: 13px;
+                    }
+                    
+                    .user-email {
+                        font-size: 11px;
                     }
                 }
             `}</style>

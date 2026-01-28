@@ -11,6 +11,13 @@ const NoteSchema = new mongoose.Schema({
     }
 });
 
+const StatusHistorySchema = new mongoose.Schema({
+    previousStatus: { type: String },
+    status: { type: String, required: true },
+    changedAt: { type: Date, default: Date.now },
+    changedBy: { type: String, default: 'System' }
+});
+
 const LeadSchema = new mongoose.Schema({
     name: {
         type: String,
@@ -21,7 +28,8 @@ const LeadSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Email is required'],
         trim: true,
-        lowercase: true
+        lowercase: true,
+        unique: true
     },
     phone: {
         type: String,
@@ -41,6 +49,7 @@ const LeadSchema = new mongoose.Schema({
         default: 'New'
     },
     notes: [NoteSchema],
+    statusHistory: [StatusHistorySchema],
     createdAt: {
         type: Date,
         default: Date.now

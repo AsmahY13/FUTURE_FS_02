@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { 
   FaArrowLeft, 
   FaEnvelope, 
@@ -10,12 +10,15 @@ import {
   FaBuilding,
   FaMapMarkerAlt,
   FaDollarSign,
-  FaChartLine,
-  FaLightbulb,
   FaCheckCircle,
-  FaTimes
+  FaTimes,
+  FaHistory,
+  FaStickyNote,
+  FaEdit
 } from 'react-icons/fa';
 import { leadAPI } from '../services/api';
+import { toast, ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 const LeadDetail = () => {
     const { id } = useParams();
@@ -24,9 +27,10 @@ const LeadDetail = () => {
     const [loading, setLoading] = useState(true);
     const [newNote, setNewNote] = useState('');
     const [updatingStatus, setUpdatingStatus] = useState(false);
-    const [notification, setNotification] = useState({ show: false, message: '', type: '' });
 
     useEffect(() => {
+        // Scroll to top when lead changes or page mounts
+        window.scrollTo({ top: 0, behavior: 'auto' });
         fetchLead();
     }, [id]);
 
@@ -36,28 +40,27 @@ const LeadDetail = () => {
             setLead(response.data);
         } catch (error) {
             console.error('Error fetching lead:', error);
-            alert('Failed to load lead details');
+            toast.error('Failed to load lead details');
         } finally {
             setLoading(false);
         }
     };
 
-    const showNotification = (message, type = 'success') => {
-        setNotification({ show: true, message, type });
-        setTimeout(() => {
-            setNotification({ show: false, message: '', type: '' });
-        }, 3000);
-    };
-
     const handleStatusUpdate = async (newStatus) => {
+        if (newStatus === lead.status) return;
+        
         setUpdatingStatus(true);
         try {
-            const response = await leadAPI.update(id, { ...lead, status: newStatus });
-            setLead(response.data);
-            showNotification(`Status updated to ${newStatus}`, 'success');
+            await leadAPI.update(id, { 
+                status: newStatus,
+                previousStatus: lead.status
+            });
+            
+            setLead(prev => ({ ...prev, status: newStatus }));
+            toast.success(`Status updated to ${newStatus}`);
         } catch (error) {
             console.error('Error updating status:', error);
-            showNotification('Failed to update status', 'error');
+            toast.error('Failed to update status');
         } finally {
             setUpdatingStatus(false);
         }
@@ -66,7 +69,7 @@ const LeadDetail = () => {
     const handleAddNote = async (e) => {
         e.preventDefault();
         if (!newNote.trim()) {
-            showNotification('Please enter a note', 'error');
+            toast.error('Please enter a note');
             return;
         }
 
@@ -74,10 +77,10 @@ const LeadDetail = () => {
             await leadAPI.addNote(id, newNote);
             setNewNote('');
             fetchLead();
-            showNotification('Note added successfully!', 'success');
+            toast.success('Note added successfully!');
         } catch (error) {
             console.error('Error adding note:', error);
-            showNotification('Failed to add note', 'error');
+            toast.error('Failed to add note');
         }
     };
 
@@ -86,247 +89,200 @@ const LeadDetail = () => {
         return date.toLocaleDateString('en-US', { 
             month: 'short', 
             day: 'numeric', 
-            year: 'numeric' 
-        });
-    };
-
-    const formatDateTime = (dateString) => {
-        const date = new Date(dateString);
-        return date.toLocaleString('en-US', {
-            month: 'short',
-            day: 'numeric',
+            year: 'numeric',
             hour: '2-digit',
             minute: '2-digit'
         });
     };
 
+    const getStatusClass = (status) => {
+        const statusMap = {
+            'new': 'status-new',
+            'contacted': 'status-contacted',
+            'converted': 'status-converted',
+            'lost': 'status-lost'
+        };
+        return statusMap[status?.toLowerCase()] || 'status-default';
+    };
+
     if (loading) {
         return (
-            <div className="loading-container">
-                <div className="loading-spinner"></div>
-                <p>Loading lead details...</p>
+            <div className="lead-detail-page">
+                <style>{styles}</style>
+                <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Loading lead details...</p>
+                </div>
             </div>
         );
     }
 
     if (!lead) {
         return (
-            <div className="lead-not-found">
-                <button onClick={() => navigate(-1)} className="btn btn-secondary">
-                    <FaArrowLeft /> Back to Leads
-                </button>
-                <div className="empty-state">
-                    <h3>Lead Not Found</h3>
-                    <p>The lead you're looking for doesn't exist or has been deleted.</p>
+            <div className="lead-detail-page">
+                <style>{styles}</style>
+                <div className="container">
+                    <button onClick={() => navigate('/leads')} className="back-btn">
+                        <FaArrowLeft /> Back to Leads
+                    </button>
+                    <div className="empty-card">
+                        <h2>Lead Not Found</h2>
+                        <p>The lead you're looking for doesn't exist or has been deleted.</p>
+                        <button onClick={() => navigate('/leads')} className="btn-primary">
+                            View All Leads
+                        </button>
+                    </div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="lead-detail">
-            {/* Notification */}
-            {notification.show && (
-                <div className={`notification notification-${notification.type}`}>
-                    <div className="notification-content">
-                        <FaCheckCircle className="notification-icon" />
-                        <span>{notification.message}</span>
-                        <button 
-                            className="notification-close"
-                            onClick={() => setNotification({ show: false, message: '', type: '' })}
-                        >
-                            <FaTimes />
-                        </button>
-                    </div>
-                </div>
-            )}
-
-            {/* Header Section */}
-            <div className="lead-detail-header">
-                <div className="header-left">
-                    <button 
-                        onClick={() => navigate(-1)} 
-                        className="btn-back"
-                    >
-                        <FaArrowLeft /> Back
+        <div className="lead-detail-page">
+            <style>{`
+                .lead-detail-page {
+                    font-family: 'Outfit', -apple-system, BlinkMacSystemFont, sans-serif;
+                }
+            `}</style>
+            <style>{styles}</style>
+            
+            <div className="container">
+                {/* Header */}
+                <div className="page-header">
+                    <button onClick={() => navigate('/leads')} className="back-btn">
+                        <FaArrowLeft /> Back to Leads
                     </button>
-                    <div className="lead-title-section">
-                        <h1>{lead.name}</h1>
-                        <div className="lead-meta">
-                            <span className="meta-item">
-                                <FaCalendar /> {formatDate(lead.createdAt)}
-                            </span>
-                            <span className="meta-divider">•</span>
-                            <span className="meta-item">
-                                Source: {lead.source}
-                            </span>
+                    
+                    <div className="header-content">
+                        <div className="lead-info">
+                            <div className="avatar">
+                                {lead.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                                <h1>{lead.name}</h1>
+                                <div className="metadata">
+                                    <span><FaCalendar /> {formatDate(lead.createdAt)}</span>
+                                    {lead.source && <span><FaGlobe /> {lead.source}</span>}
+                                </div>
+                            </div>
                         </div>
-                    </div>
-                </div>
-                
-                <div className="header-right">
-                    <div className="status-selector">
-                        <label>Status</label>
-                        <div className="status-dropdown-container">
+                        
+                        <div className="status-control">
+                            <label>Status</label>
                             <select 
                                 value={lead.status}
                                 onChange={(e) => handleStatusUpdate(e.target.value)}
                                 disabled={updatingStatus}
-                                className={`status-dropdown status-${lead.status.toLowerCase()}`}
+                                className={`status-select ${getStatusClass(lead.status)}`}
                             >
                                 <option value="New">New</option>
                                 <option value="Contacted">Contacted</option>
                                 <option value="Converted">Converted</option>
                                 <option value="Lost">Lost</option>
                             </select>
-                            {updatingStatus && <span className="updating-dots">...</span>}
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            {/* Main Content - Two Column Layout */}
-            <div className="lead-content-grid">
-                {/* Left Column - Compact Cards */}
-                <div className="left-column">
-                    {/* Contact Details Card - Tighter */}
-                    <div className="card tight contact-details">
-                        <div className="card-header tight-header">
-                            <h2><FaUser /> Contact Details</h2>
-                        </div>
-                        <div className="card-body tight-body">
-                            <div className="detail-list">
-                                <div className="detail-item tight-item">
-                                    <div className="detail-label">
-                                        <FaEnvelope />
-                                    </div>
-                                    <div className="detail-content">
-                                        <a href={`mailto:${lead.email}`} className="detail-value">
-                                            {lead.email}
-                                        </a>
-                                    </div>
-                                </div>
-                                
-                                <div className="detail-item tight-item">
-                                    <div className="detail-label">
-                                        <FaPhone />
-                                    </div>
-                                    <div className="detail-content">
-                                        <span className="detail-value">
-                                            {lead.phone || 'Not provided'}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                {lead.company && (
-                                    <div className="detail-item tight-item">
-                                        <div className="detail-label">
-                                            <FaBuilding />
-                                        </div>
-                                        <div className="detail-content">
-                                            <span className="detail-value">
-                                                {lead.company}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                <div className="detail-item tight-item">
-                                    <div className="detail-label">
-                                        <FaGlobe />
-                                    </div>
-                                    <div className="detail-content">
-                                        <span className="detail-value">
-                                            {lead.source}
-                                        </span>
-                                    </div>
-                                </div>
-                                
-                                {lead.location && (
-                                    <div className="detail-item tight-item">
-                                        <div className="detail-label">
-                                            <FaMapMarkerAlt />
-                                        </div>
-                                        <div className="detail-content">
-                                            <span className="detail-value">
-                                                {lead.location}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                                
-                                {lead.estimatedValue && (
-                                    <div className="detail-item tight-item">
-                                        <div className="detail-label">
-                                            <FaDollarSign />
-                                        </div>
-                                        <div className="detail-content">
-                                            <span className="detail-value highlight">
-                                                ${lead.estimatedValue.toLocaleString()}
-                                            </span>
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-
-                    {/* Pro Tip Card - Tighter */}
-                    <div className="card tight pro-tip">
-                        <div className="card-header tight-header">
-                            <h2><FaLightbulb /> Quick Tips</h2>
-                        </div>
-                        <div className="card-body tight-body">
-                            <div className="tip-list">
-                                <div className="tip-item tight-tip">
-                                    <FaChartLine className="tip-icon" />
-                                    <div className="tip-text">
-                                        Update status regularly
-                                    </div>
-                                </div>
-                                <div className="tip-item tight-tip">
-                                    <FaPhone className="tip-icon" />
-                                    <div className="tip-text">
-                                        Follow up within 24h
-                                    </div>
-                                </div>
-                                <div className="tip-item tight-tip">
-                                    <FaEnvelope className="tip-icon" />
-                                    <div className="tip-text">
-                                        Personalize emails
-                                    </div>
-                                </div>
-                            </div>
                         </div>
                     </div>
                 </div>
 
-                {/* Right Column - Notes */}
-                <div className="right-column">
-                    <div className="card notes-section">
+                {/* Main Content */}
+                <div className="content-layout">
+                    {/* Contact Information */}
+                    <div className="card">
                         <div className="card-header">
-                            <h2>Notes & Follow-ups</h2>
-                            <span className="notes-count">
-                                {lead.notes ? lead.notes.length : 0}
-                            </span>
+                            <h2>Contact Information</h2>
                         </div>
-                        
                         <div className="card-body">
-                            <form onSubmit={handleAddNote} className="note-form">
+                            <div className="info-list">
+                                <div className="info-row">
+                                    <div className="info-label">
+                                        <FaEnvelope /> Email
+                                    </div>
+                                    <div className="info-value">
+                                        <a href={`mailto:${lead.email}`}>{lead.email}</a>
+                                    </div>
+                                </div>
+
+                                <div className="info-row">
+                                    <div className="info-label">
+                                        <FaPhone /> Phone
+                                    </div>
+                                    <div className="info-value">
+                                        {lead.phone ? (
+                                            <a href={`tel:${lead.phone}`}>{lead.phone}</a>
+                                        ) : (
+                                            <span className="text-muted">Not provided</span>
+                                        )}
+                                    </div>
+                                </div>
+
+                                {lead.company && (
+                                    <div className="info-row">
+                                        <div className="info-label">
+                                            <FaBuilding /> Company
+                                        </div>
+                                        <div className="info-value">
+                                            {lead.company}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {lead.location && (
+                                    <div className="info-row">
+                                        <div className="info-label">
+                                            <FaMapMarkerAlt /> Location
+                                        </div>
+                                        <div className="info-value">
+                                            {lead.location}
+                                        </div>
+                                    </div>
+                                )}
+
+                                {lead.estimatedValue && (
+                                    <div className="info-row highlight">
+                                        <div className="info-label">
+                                            <FaDollarSign /> Estimated Value
+                                        </div>
+                                        <div className="info-value value-amount">
+                                            ${lead.estimatedValue.toLocaleString()}
+                                        </div>
+                                    </div>
+                                )}
+
+                                <div className="info-row">
+                                    <div className="info-label">
+                                        <FaHistory /> Activity
+                                    </div>
+                                    <div className="info-value">
+                                        <Link to={`/leads/${id}/history`} className="link-btn">
+                                            View History
+                                        </Link>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Notes */}
+                    <div className="card">
+                        <div className="card-header">
+                            <h2>Notes</h2>
+                        </div>
+                        <div className="card-body">
+                            <form onSubmit={handleAddNote}>
                                 <textarea
                                     value={newNote}
                                     onChange={(e) => setNewNote(e.target.value)}
-                                    placeholder="Add a note or follow-up activity..."
-                                    rows="3"
-                                    className="note-input"
+                                    placeholder="Add a note..."
+                                    rows="4"
+                                    className="textarea"
                                 />
-                                <div className="note-form-actions">
-                                    <button type="submit" className="btn btn-primary">
-                                        Add Note
+                                <div className="form-actions">
+                                    <button type="submit" className="btn-primary">
+                                        <FaCheckCircle /> Add Note
                                     </button>
                                     <button 
                                         type="button" 
-                                        className="btn btn-secondary"
+                                        className="btn-secondary"
                                         onClick={() => setNewNote('')}
                                     >
                                         Clear
@@ -334,628 +290,447 @@ const LeadDetail = () => {
                                 </div>
                             </form>
 
-                            <div className="note-list">
-                                {lead.notes && lead.notes.length > 0 ? (
-                                    lead.notes
-                                        .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-                                        .map((note, index) => (
-                                            <div key={index} className="note-item">
-                                                <div className="note-avatar">
-                                                    A
+                            {lead.notes && lead.notes.length > 0 && (
+                                <div className="notes-section">
+                                    <h3>Recent Notes</h3>
+                                    <div className="notes-list">
+                                        {lead.notes.slice(-5).reverse().map((note, index) => (
+                                            <div key={note._id || index} className="note-item">
+                                                <div className="note-date">
+                                                    {formatDate(note.createdAt || lead.updatedAt)}
                                                 </div>
-                                                <div className="note-content-wrapper">
-                                                    <div className="note-content">{note.content}</div>
-                                                    <div className="note-meta">
-                                                        <span className="note-author">
-                                                            Admin
-                                                        </span>
-                                                        <span className="note-time">
-                                                            {formatDateTime(note.createdAt)}
-                                                        </span>
-                                                    </div>
-                                                </div>
+                                                <p>{note.content || note}</p>
                                             </div>
-                                        ))
-                                ) : (
-                                    <div className="no-notes">
-                                        <div className="no-notes-icon">📝</div>
-                                        <h4>No Notes Yet</h4>
-                                        <p>Start the conversation by adding your first note.</p>
+                                        ))}
                                     </div>
-                                )}
-                            </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </div>
             </div>
 
-            <style jsx>{`
-                .lead-detail {
-                    max-width: 1200px;
-                    margin: 0 auto;
-                    padding: 12px;
-                }
-                
-                /* Notification */
-                .notification {
-                    position: fixed;
-                    top: 20px;
-                    right: 20px;
-                    z-index: 1000;
-                    padding: 12px 16px;
-                    border-radius: 6px;
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-                    animation: slideIn 0.3s ease;
-                    min-width: 300px;
-                    max-width: 400px;
-                }
-                
-                .notification-success {
-                    background: #d4edda;
-                    border: 1px solid #c3e6cb;
-                    color: #155724;
-                }
-                
-                .notification-error {
-                    background: #f8d7da;
-                    border: 1px solid #f5c6cb;
-                    color: #721c24;
-                }
-                
-                .notification-content {
-                    display: flex;
-                    align-items: center;
-                    gap: 10px;
-                }
-                
-                .notification-icon {
-                    font-size: 16px;
-                    flex-shrink: 0;
-                }
-                
-                .notification-close {
-                    background: none;
-                    border: none;
-                    color: inherit;
-                    cursor: pointer;
-                    margin-left: auto;
-                    padding: 0;
-                    font-size: 12px;
-                    opacity: 0.7;
-                    transition: opacity 0.2s;
-                }
-                
-                .notification-close:hover {
-                    opacity: 1;
-                }
-                
-                @keyframes slideIn {
-                    from {
-                        transform: translateX(100%);
-                        opacity: 0;
-                    }
-                    to {
-                        transform: translateX(0);
-                        opacity: 1;
-                    }
-                }
-                
-                .loading-container {
-                    display: flex;
-                    flex-direction: column;
-                    align-items: center;
-                    justify-content: center;
-                    height: 60vh;
-                    gap: 12px;
-                }
-                
-                .loading-spinner {
-                    width: 36px;
-                    height: 36px;
-                    border: 3px solid #f3f3f3;
-                    border-top: 3px solid #667eea;
-                    border-radius: 50%;
-                    animation: spin 1s linear infinite;
-                }
-                
-                @keyframes spin {
-                    0% { transform: rotate(0deg); }
-                    100% { transform: rotate(360deg); }
-                }
-                
-                .lead-detail-header {
-                    display: flex;
-                    justify-content: space-between;
-                    align-items: flex-start;
-                    margin-bottom: 16px;
-                    padding-bottom: 12px;
-                    border-bottom: 1px solid #e9ecef;
-                }
-                
-                .header-left {
-                    flex: 1;
-                }
-                
-                .btn-back {
-                    display: inline-flex;
-                    align-items: center;
-                    gap: 5px;
-                    padding: 5px 10px;
-                    background: #f8f9fa;
-                    border: 1px solid #dee2e6;
-                    border-radius: 4px;
-                    color: #495057;
-                    cursor: pointer;
-                    font-size: 12px;
-                    margin-bottom: 8px;
-                    transition: all 0.2s;
-                }
-                
-                .btn-back:hover {
-                    background: #e9ecef;
-                }
-                
-                .lead-title-section h1 {
-                    font-size: 22px;
-                    color: #2c3e50;
-                    margin: 0 0 4px 0;
-                    font-weight: 600;
-                }
-                
-                .lead-meta {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                    color: #6c757d;
-                    font-size: 11px;
-                }
-                
-                .meta-item {
-                    display: flex;
-                    align-items: center;
-                    gap: 3px;
-                }
-                
-                .meta-divider {
-                    color: #adb5bd;
-                }
-                
-                .status-selector {
-                    text-align: right;
-                }
-                
-                .status-selector label {
-                    display: block;
-                    font-weight: 600;
-                    color: #6c757d;
-                    font-size: 11px;
-                    margin-bottom: 3px;
-                }
-                
-                .status-dropdown-container {
-                    display: flex;
-                    align-items: center;
-                    gap: 6px;
-                }
-                
-                .status-dropdown {
-                    padding: 5px 8px;
-                    border: 1px solid #dee2e6;
-                    border-radius: 4px;
-                    background: white;
-                    font-size: 11px;
-                    font-weight: 500;
-                    min-width: 110px;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                
-                .status-dropdown:hover {
-                    border-color: #adb5bd;
-                }
-                
-                .status-new {
-                    color: #17a2b8;
-                    border-color: #bee5eb;
-                }
-                
-                .status-contacted {
-                    color: #ffc107;
-                    border-color: #ffeaa7;
-                }
-                
-                .status-converted {
-                    color: #28a745;
-                    border-color: #c3e6cb;
-                }
-                
-                .status-lost {
-                    color: #dc3545;
-                    border-color: #f5c6cb;
-                }
-                
-                .updating-dots {
-                    font-size: 12px;
-                    color: #6c757d;
-                    animation: blink 1.5s infinite;
-                }
-                
-                @keyframes blink {
-                    0%, 100% { opacity: 1; }
-                    50% { opacity: 0.3; }
-                }
-                
-                /* Two Column Layout */
-                .lead-content-grid {
-                    display: grid;
-                    grid-template-columns: 320px 1fr;
-                    gap: 16px;
-                    margin-top: 8px;
-                }
-                
-                @media (max-width: 1024px) {
-                    .lead-content-grid {
-                        grid-template-columns: 1fr;
-                        gap: 12px;
-                    }
-                }
-                
-                /* Tight Card Styles */
-                .card.tight {
-                    border-radius: 6px;
-                    border: 1px solid #e9ecef;
-                    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
-                    background: white;
-                }
-                
-                .card.tight:not(:last-child) {
-                    margin-bottom: 12px;
-                }
-                
-                .card-header.tight-header {
-                    padding: 8px 12px;
-                    border-bottom: 1px solid #e9ecef;
-                    background: #f8f9fa;
-                }
-                
-                .card-header.tight-header h2 {
-                    font-size: 13px;
-                    color: #495057;
-                    margin: 0;
-                    display: flex;
-                    align-items: center;
-                    gap: 5px;
-                    font-weight: 600;
-                }
-                
-                .card-body.tight-body {
-                    padding: 10px 12px;
-                }
-                
-                /* Tight Contact Details */
-                .detail-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 8px;
-                }
-                
-                .detail-item.tight-item {
-                    display: flex;
-                    align-items: flex-start;
-                    gap: 8px;
-                }
-                
-                .detail-label {
-                    width: 24px;
-                    height: 24px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    color: #667eea;
-                    font-size: 11px;
-                    flex-shrink: 0;
-                }
-                
-                .detail-content {
-                    flex: 1;
-                    min-width: 0;
-                }
-                
-                .detail-value {
-                    color: #2c3e50;
-                    font-size: 12px;
-                    line-height: 1.3;
-                }
-                
-                .detail-value.highlight {
-                    color: #28a745;
-                    font-weight: 600;
-                }
-                
-                .detail-value a {
-                    color: #667eea;
-                    text-decoration: none;
-                    word-break: break-all;
-                }
-                
-                .detail-value a:hover {
-                    text-decoration: underline;
-                }
-                
-                /* Tight Pro Tips */
-                .tip-list {
-                    display: flex;
-                    flex-direction: column;
-                    gap: 6px;
-                }
-                
-                .tip-item.tight-tip {
-                    display: flex;
-                    align-items: center;
-                    gap: 8px;
-                }
-                
-                .tip-icon {
-                    color: #f39c12;
-                    font-size: 10px;
-                    flex-shrink: 0;
-                }
-                
-                .tip-text {
-                    font-size: 11px;
-                    color: #495057;
-                    line-height: 1.3;
-                }
-                
-                /* Notes Section */
-                .card:not(.tight) {
-                    border-radius: 6px;
-                    border: 1px solid #e9ecef;
-                    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-                    background: white;
-                    height: 100%;
-                }
-                
-                .card-header {
-                    padding: 12px 16px;
-                    border-bottom: 1px solid #e9ecef;
-                    background: #f8f9fa;
-                }
-                
-                .card-header h2 {
-                    font-size: 14px;
-                    color: #495057;
-                    margin: 0;
-                    font-weight: 600;
-                }
-                
-                .notes-count {
-                    background: #667eea;
-                    color: white;
-                    padding: 2px 6px;
-                    border-radius: 10px;
-                    font-size: 10px;
-                    font-weight: 600;
-                }
-                
-                .card-body {
-                    padding: 16px;
-                }
-                
-                /* Note Form */
-                .note-form {
-                    margin-bottom: 16px;
-                }
-                
-                .note-input {
-                    width: 100%;
-                    padding: 10px;
-                    border: 1px solid #dee2e6;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    resize: vertical;
-                    min-height: 60px;
-                    margin-bottom: 10px;
-                    font-family: inherit;
-                    transition: all 0.2s;
-                }
-                
-                .note-input:focus {
-                    outline: none;
-                    border-color: #667eea;
-                    box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
-                }
-                
-                .note-form-actions {
-                    display: flex;
-                    gap: 6px;
-                }
-                
-                .btn {
-                    padding: 6px 12px;
-                    border: none;
-                    border-radius: 4px;
-                    font-size: 12px;
-                    font-weight: 500;
-                    cursor: pointer;
-                    transition: all 0.2s;
-                }
-                
-                .btn-primary {
-                    background: #667eea;
-                    color: white;
-                }
-                
-                .btn-primary:hover {
-                    background: #5a67d8;
-                }
-                
-                .btn-secondary {
-                    background: #f8f9fa;
-                    color: #495057;
-                    border: 1px solid #dee2e6;
-                }
-                
-                .btn-secondary:hover {
-                    background: #e9ecef;
-                }
-                
-                /* Note List */
-                .note-list {
-                    max-height: 380px;
-                    overflow-y: auto;
-                    padding-right: 6px;
-                }
-                
-                .note-item {
-                    display: flex;
-                    gap: 10px;
-                    padding: 10px 0;
-                    border-bottom: 1px solid #f8f9fa;
-                }
-                
-                .note-item:last-child {
-                    border-bottom: none;
-                }
-                
-                .note-avatar {
-                    width: 26px;
-                    height: 26px;
-                    background: #667eea;
-                    color: white;
-                    border-radius: 50%;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    font-weight: 600;
-                    font-size: 11px;
-                    flex-shrink: 0;
-                }
-                
-                .note-content-wrapper {
-                    flex: 1;
-                }
-                
-                .note-content {
-                    color: #2c3e50;
-                    margin-bottom: 3px;
-                    line-height: 1.3;
-                    font-size: 12px;
-                }
-                
-                .note-meta {
-                    display: flex;
-                    justify-content: space-between;
-                    font-size: 10px;
-                    color: #95a5a6;
-                }
-                
-                .note-author {
-                    font-weight: 500;
-                }
-                
-                .no-notes {
-                    text-align: center;
-                    padding: 24px 12px;
-                    color: #adb5bd;
-                }
-                
-                .no-notes-icon {
-                    font-size: 28px;
-                    margin-bottom: 8px;
-                }
-                
-                .no-notes h4 {
-                    margin: 0 0 4px 0;
-                    color: #6c757d;
-                    font-size: 13px;
-                }
-                
-                .no-notes p {
-                    margin: 0;
-                    font-size: 11px;
-                }
-                
-                /* Empty State */
-                .lead-not-found {
-                    max-width: 600px;
-                    margin: 0 auto;
-                    padding: 24px 12px;
-                }
-                
-                .empty-state {
-                    text-align: center;
-                    padding: 32px 12px;
-                    background: white;
-                    border-radius: 6px;
-                    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.08);
-                    margin-top: 16px;
-                }
-                
-                .empty-state h3 {
-                    color: #dc3545;
-                    margin-bottom: 6px;
-                    font-size: 16px;
-                }
-                
-                .empty-state p {
-                    color: #6c757d;
-                    font-size: 12px;
-                }
-                
-                /* Scrollbar Styling */
-                .note-list::-webkit-scrollbar {
-                    width: 3px;
-                }
-                
-                .note-list::-webkit-scrollbar-track {
-                    background: #f1f1f1;
-                    border-radius: 3px;
-                }
-                
-                .note-list::-webkit-scrollbar-thumb {
-                    background: #c1c1c1;
-                    border-radius: 3px;
-                }
-                
-                .note-list::-webkit-scrollbar-thumb:hover {
-                    background: #a8a8a8;
-                }
-                
-                @media (max-width: 768px) {
-                    .lead-detail {
-                        padding: 8px;
-                    }
-                    
-                    .lead-detail-header {
-                        flex-direction: column;
-                        gap: 8px;
-                    }
-                    
-                    .status-selector {
-                        text-align: left;
-                        width: 100%;
-                    }
-                    
-                    .status-dropdown {
-                        width: 100%;
-                    }
-                    
-                    .lead-content-grid {
-                        grid-template-columns: 1fr;
-                        gap: 10px;
-                    }
-                    
-                    .notification {
-                        left: 10px;
-                        right: 10px;
-                        min-width: auto;
-                        max-width: none;
-                    }
-                }
-            `}</style>
+            <ToastContainer 
+                position="bottom-right"
+                autoClose={3000}
+                hideProgressBar={false}
+            />
         </div>
     );
 };
+
+const styles = `
+    * {
+        box-sizing: border-box;
+    }
+
+    .lead-detail-page {
+        min-height: 100vh;
+        background: #f8f9fa;
+        padding: 2rem 1rem;
+    }
+
+    .container {
+        max-width: 900px;
+        margin: 0 auto;
+    }
+
+    /* Header */
+    .page-header {
+        background: white;
+        border-radius: 8px;
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+
+    .back-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.5rem 1rem;
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        color: #495057;
+        font-size: 0.875rem;
+        cursor: pointer;
+        margin-bottom: 1rem;
+        transition: all 0.2s;
+    }
+
+    .back-btn:hover {
+        background: #e9ecef;
+    }
+
+    .header-content {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 1.5rem;
+    }
+
+    .lead-info {
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+    }
+
+    .avatar {
+        width: 60px;
+        height: 60px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 1.5rem;
+        font-weight: 600;
+    }
+
+    .lead-info h1 {
+        margin: 0 0 0.5rem 0;
+        font-size: 1.5rem;
+        color: #212529;
+    }
+
+    .metadata {
+        display: flex;
+        gap: 1rem;
+        font-size: 0.875rem;
+        color: #6c757d;
+    }
+
+    .metadata span {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+
+    .status-control {
+        display: flex;
+        flex-direction: column;
+        gap: 0.5rem;
+    }
+
+    .status-control label {
+        font-size: 0.75rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+    }
+
+    .status-select {
+        padding: 0.5rem 1rem;
+        border: 2px solid;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        background: white;
+        min-width: 140px;
+    }
+
+    .status-select:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+    }
+
+    .status-new { color: #0d6efd; border-color: #0d6efd; }
+    .status-contacted { color: #fd7e14; border-color: #fd7e14; }
+    .status-converted { color: #198754; border-color: #198754; }
+    .status-lost { color: #dc3545; border-color: #dc3545; }
+    .status-default { color: #6c757d; border-color: #6c757d; }
+
+    /* Content Layout */
+    .content-layout {
+        display: grid;
+        gap: 1.5rem;
+    }
+
+    /* Card */
+    .card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+
+    .card-header {
+        padding: 1rem 1.5rem;
+        border-bottom: 1px solid #e9ecef;
+        background: #f8f9fa;
+    }
+
+    .card-header h2 {
+        margin: 0;
+        font-size: 1.125rem;
+        color: #212529;
+        font-weight: 600;
+    }
+
+    .card-body {
+        padding: 1.5rem;
+    }
+
+    /* Info List */
+    .info-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .info-row {
+        display: flex;
+        align-items: flex-start;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #f1f3f5;
+    }
+
+    .info-row:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+
+    .info-row.highlight {
+        background: #fff3cd;
+        padding: 1rem;
+        border-radius: 6px;
+        border: none;
+    }
+
+    .info-label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        min-width: 140px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #495057;
+    }
+
+    .info-label svg {
+        color: #667eea;
+    }
+
+    .info-value {
+        flex: 1;
+        font-size: 0.9375rem;
+        color: #212529;
+    }
+
+    .info-value a {
+        color: #0d6efd;
+        text-decoration: none;
+    }
+
+    .info-value a:hover {
+        text-decoration: underline;
+    }
+
+    .text-muted {
+        color: #6c757d;
+    }
+
+    .value-amount {
+        font-size: 1.25rem;
+        font-weight: 700;
+        color: #198754;
+    }
+
+    .link-btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.25rem;
+        color: #0d6efd;
+        text-decoration: none;
+        font-weight: 500;
+    }
+
+    .link-btn:hover {
+        text-decoration: underline;
+    }
+
+    /* Form */
+    .textarea {
+        width: 100%;
+        padding: 0.75rem;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 0.9375rem;
+        font-family: inherit;
+        resize: vertical;
+        margin-bottom: 1rem;
+    }
+
+    .textarea:focus {
+        outline: none;
+        border-color: #667eea;
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    .form-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn-primary {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.625rem 1.25rem;
+        background: #667eea;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-primary:hover {
+        background: #5568d3;
+    }
+
+    .btn-secondary {
+        padding: 0.625rem 1.25rem;
+        background: white;
+        color: #495057;
+        border: 1px solid #ced4da;
+        border-radius: 6px;
+        font-size: 0.875rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .btn-secondary:hover {
+        background: #f8f9fa;
+    }
+
+    /* Notes */
+    .notes-section {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #e9ecef;
+    }
+
+    .notes-section h3 {
+        margin: 0 0 1rem 0;
+        font-size: 1rem;
+        color: #212529;
+        font-weight: 600;
+    }
+
+    .notes-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .note-item {
+        padding: 1rem;
+        background: #f8f9fa;
+        border-left: 3px solid #667eea;
+        border-radius: 4px;
+    }
+
+    .note-date {
+        font-size: 0.75rem;
+        color: #6c757d;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    .note-item p {
+        margin: 0;
+        color: #495057;
+        line-height: 1.5;
+    }
+
+    /* Loading */
+    .loading-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 400px;
+        gap: 1rem;
+    }
+
+    .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid #f3f4f6;
+        border-top-color: #667eea;
+        border-radius: 50%;
+        animation: spin 0.8s linear infinite;
+    }
+
+    @keyframes spin {
+        to { transform: rotate(360deg); }
+    }
+
+    /* Empty State */
+    .empty-card {
+        background: white;
+        border-radius: 8px;
+        padding: 3rem 2rem;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        margin-top: 2rem;
+    }
+
+    .empty-card h2 {
+        margin: 0 0 0.5rem 0;
+        color: #dc3545;
+    }
+
+    .empty-card p {
+        color: #6c757d;
+        margin-bottom: 1.5rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .lead-detail-page {
+            padding: 1rem;
+        }
+
+        .header-content {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .status-control {
+            width: 100%;
+        }
+
+        .status-select {
+            width: 100%;
+        }
+
+        .info-row {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .info-label {
+            min-width: auto;
+        }
+
+        .form-actions {
+            flex-direction: column;
+        }
+
+        .btn-primary,
+        .btn-secondary {
+            width: 100%;
+            justify-content: center;
+        }
+    }
+`;
 
 export default LeadDetail;

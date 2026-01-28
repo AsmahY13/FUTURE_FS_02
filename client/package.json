@@ -8,12 +8,18 @@
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.5.1",
     "chart.js": "^4.5.1",
+    "jspdf": "^4.0.0",
+    "jspdf-autotable": "^5.0.7",
+    "libphonenumber-js": "^1.12.35",
+    "papaparse": "^5.5.3",
     "react": "^19.2.3",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.3",
     "react-icons": "^4.11.0",
+    "react-phone-input-2": "^2.15.1",
     "react-router-dom": "^6.20.0",
     "react-scripts": "5.0.1",
+    "react-toastify": "^11.0.5",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

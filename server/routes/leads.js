@@ -80,6 +80,19 @@ router.get('/stats/summary', async (req, res) => {
 // POST create new lead
 router.post('/', async (req, res) => {
     try {
+        const { email, phone } = req.body;
+        // Always check for duplicate email
+        let duplicate = await Lead.findOne({ email });
+        if (duplicate) {
+            return res.status(409).json({ message: 'A lead with this email already exists.' });
+        }
+        // Only check for duplicate phone if phone is provided and not empty
+        if (phone && phone.trim() !== '') {
+            duplicate = await Lead.findOne({ phone });
+            if (duplicate) {
+                return res.status(409).json({ message: 'A lead with this phone already exists.' });
+            }
+        }
         const lead = new Lead(req.body);
         await lead.save();
         res.status(201).json(lead);
@@ -91,14 +104,31 @@ router.post('/', async (req, res) => {
 // PUT update lead
 router.put('/:id', async (req, res) => {
     try {
-        const lead = await Lead.findByIdAndUpdate(
-            req.params.id,
-            req.body,
-            { new: true, runValidators: true }
-        );
+        const lead = await Lead.findById(req.params.id);
         if (!lead) {
             return res.status(404).json({ message: 'Lead not found' });
         }
+
+        // Check if status is being updated
+        const newStatus = req.body.status;
+        if (newStatus && newStatus !== lead.status) {
+            lead.statusHistory.push({
+                previousStatus: lead.status,
+                status: newStatus,
+                changedAt: new Date(),
+                changedBy: req.body.changedBy || 'System'
+            });
+            lead.status = newStatus;
+        }
+
+        // Update other fields
+        Object.keys(req.body).forEach(key => {
+            if (key !== 'status' && key !== 'statusHistory') {
+                lead[key] = req.body[key];
+            }
+        });
+
+        await lead.save();
         res.json(lead);
     } catch (error) {
         res.status(400).json({ message: error.message });

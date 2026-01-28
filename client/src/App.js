@@ -1,16 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { authAPI } from './services/api';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
 import Leads from './components/Leads';
 import LeadDetail from './components/LeadDetail';
+import LeadHistory from './components/LeadHistory'; // ADD THIS LINE
 import Sidebar from './components/Sidebar';
 import './App.css';
 
 function App() {
     const [isAuthenticated, setIsAuthenticated] = useState(authAPI.isAuthenticated());
     const [user, setUser] = useState(authAPI.getCurrentUser());
+    const location = useLocation();
 
     useEffect(() => {
         // Check auth status on mount
@@ -39,11 +41,12 @@ function App() {
         <div className="app">
             <Sidebar user={user} onLogout={handleLogout} />
             <div className="main-content">
-                <Routes>
+                <Routes location={location} key={location.pathname}>
                     <Route path="/" element={<Navigate to="/dashboard" />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/leads" element={<Leads />} />
                     <Route path="/leads/:id" element={<LeadDetail />} />
+                    <Route path="/leads/:id/history" element={<LeadHistory />} /> {/* ADD THIS ROUTE */}
                 </Routes>
             </div>
         </div>
