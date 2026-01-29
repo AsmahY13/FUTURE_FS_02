@@ -6,14 +6,17 @@ A full-stack CRM web application built as part of the Future Interns Full Stack 
 
 # 🎯 Objectives
 Streamline lead management for small teams
+
 Practice full-stack development with React, Node.js, and MongoDB
 
 Implement authentication and secure API endpoints
+
 Visualize data with interactive charts and dashboards
+
 Deploy a production-ready app to the cloud
 
 # ✨ Key Features
-Responsive Design – Works on mobile, tablet, and desktop
+Responsive Design – Works on desktop and tablet
 
 Authentication – Secure admin login with JWT
 
@@ -34,10 +37,11 @@ Backend: Node.js, Express, Mongoose, JWT, CORS
 
 Database: MongoDB Atlas
 
-Deployment: Render (backend), Vercel/Netlify (frontend)
+Deployment: Render (backend), Vercel (frontend)
 
 # 📊 Implementation Highlights
 JWT authentication and protected API routes
+
 Modular React components for easy extension
 
 Chart.js integration for real-time analytics
@@ -50,11 +54,13 @@ Clean REST API with error handling and validation
 ✅ Prerequisites
 
 Node.js 16+
+
 MongoDB Atlas account
 
 💻 Local Development
 
 🔐 Environment Variables
+
 Create a .env file in server:
 
 # 📦 Deployment
@@ -72,7 +78,7 @@ LinkedIn: https://www.linkedin.com/in/asmah-yaseen-a552a5263
 
 Portfolio: https://my-portfolio-2026-3a3d4.web.app
 
-GitHub: https://github.com/AsmahY13/minicrm-project
+GitHub: https://github.com/AsmahY13/FUTURE_FS_02
 
 # 📝 Future Interns Task 2
 This project completes all requirements for Task 2:
