@@ -4,6 +4,8 @@
 
 A full-stack CRM web application built as part of the Future Interns Full Stack Web Development program. MiniCRM helps small businesses manage client leads, track sales pipelines, and visualize performance with modern UI and analytics.
 
+Live Link: https://future-fs-02-sigma.vercel.app
+
 # 🎯 Objectives
 Streamline lead management for small teams
 
