@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { FaSearch, FaPlus, FaPhone, FaGlobe, FaCalendar, FaDownload, FaEnvelope, FaTimes, FaEye, FaTrash, FaFileDownload, FaFileCsv } from 'react-icons/fa';
 import Papa from 'papaparse';
@@ -17,28 +17,29 @@ const Leads = () => {
   const [selectedStatus, setSelectedStatus] = useState('all');
   const [confirmDelete, setConfirmDelete] = useState({ show: false, id: null });
 
+  // Only fetch leads on mount or after create/delete
   useEffect(() => {
     setLoading(true);
     fetchLeads();
-  }, [searchTerm]);
+  }, []);
 
   const fetchLeads = async () => {
     try {
-      const response = await leadAPI.getAll(searchTerm);
+      const response = await leadAPI.getAll();
       setLeads(response.data);
     } catch (error) {
       console.error('Error fetching leads:', error);
       toast.error('Failed to load leads');
     } finally {
-      // Add a short delay for smoother transition
       setTimeout(() => setLoading(false), 250);
     }
   };
 
   const handleCreateLead = async (leadData) => {
     try {
+      setLoading(true);
       await leadAPI.create(leadData);
-      fetchLeads();
+      await fetchLeads();
       setShowForm(false);
       toast.success('Lead created successfully!');
     } catch (error) {
@@ -48,6 +49,8 @@ const Leads = () => {
       } else {
         toast.error('Failed to create lead. Please try again.');
       }
+    } finally {
+      setLoading(false);
     }
   };
 
