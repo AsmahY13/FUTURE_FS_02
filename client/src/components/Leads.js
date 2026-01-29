@@ -38,8 +38,9 @@ const Leads = () => {
   const handleCreateLead = async (leadData) => {
     try {
       setLoading(true);
-      await leadAPI.create(leadData);
-      await fetchLeads();
+      const response = await leadAPI.create(leadData);
+      // Add the new lead to the top of the list instantly
+      setLeads(prevLeads => [response.data, ...prevLeads]);
       setShowForm(false);
       toast.success('Lead created successfully!');
     } catch (error) {
