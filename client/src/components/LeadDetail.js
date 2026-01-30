@@ -105,9 +105,16 @@ const LeadDetail = () => {
         return statusMap[status?.toLowerCase()] || 'status-default';
     };
 
-    // Don't show a loading spinner, just render nothing until loaded
     if (loading) {
-        return null;
+        return (
+            <div className="lead-detail-page">
+                <style>{styles}</style>
+                <div className="loading-state">
+                    <div className="spinner"></div>
+                    <p>Loading lead details...</p>
+                </div>
+            </div>
+        );
     }
 
     if (!lead) {
