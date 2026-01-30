@@ -18,11 +18,11 @@ const Dashboard = () => {
 
     useEffect(() => {
         fetchData();
-        
         setAnimating(true);
-        const timer = setTimeout(() => setAnimating(false), 1200);
-        
-        return () => clearTimeout(timer);
+        // Remove artificial delay, set animating false as soon as data is loaded
+        // Animations will be handled by CSS if needed
+        // No setTimeout here
+        return () => {};
     }, []);
 
     const fetchData = async () => {
@@ -31,13 +31,13 @@ const Dashboard = () => {
                 leadAPI.getStats(),
                 leadAPI.getAll()
             ]);
-            
             setStats(statsResponse.data);
             setRecentLeads(leadsResponse.data.slice(0, 5));
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
         } finally {
             setLoading(false);
+            setAnimating(false);
         }
     };
 

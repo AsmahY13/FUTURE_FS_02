@@ -20,10 +20,13 @@ const Leads = () => {
   // Only fetch leads on mount or after create/delete
   useEffect(() => {
     setLoading(true);
-    fetchLeads();
+    fetchLeadsWithMinDelay();
   }, []);
 
-  const fetchLeads = async () => {
+  // Ensures loading spinner is visible for at least 500ms
+  const fetchLeadsWithMinDelay = async () => {
+    const minDelay = 500;
+    const start = Date.now();
     try {
       const response = await leadAPI.getAll();
       setLeads(response.data);
@@ -31,7 +34,12 @@ const Leads = () => {
       console.error('Error fetching leads:', error);
       toast.error('Failed to load leads');
     } finally {
-      setTimeout(() => setLoading(false), 250);
+      const elapsed = Date.now() - start;
+      if (elapsed < minDelay) {
+        setTimeout(() => setLoading(false), minDelay - elapsed);
+      } else {
+        setLoading(false);
+      }
     }
   };
 
@@ -873,7 +881,7 @@ const Leads = () => {
                 onClick={async () => {
                   try {
                     await leadAPI.delete(confirmDelete.id);
-                    fetchLeads();
+                    fetchLeadsWithMinDelay();
                     toast.success('Lead deleted successfully');
                   } catch (error) {
                     console.error('Error deleting lead:', error);

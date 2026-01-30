@@ -204,16 +204,9 @@ const LeadHistory = () => {
         window.print();
     };
 
+    // Don't show a loading spinner, just render nothing until loaded
     if (loading) {
-        return (
-            <div className="history-page">
-                <style>{styles}</style>
-                <div className="loading-state">
-                    <div className="spinner"></div>
-                    <p>Loading history...</p>
-                </div>
-            </div>
-        );
+        return null;
     }
 
     if (!lead) {
